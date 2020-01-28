@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link href="css/mui.min.css" rel="stylesheet" />
+	</head>
+
+	<body>
+		<script src="js/mui.min.js"></script>
+		<script type="text/javascript">
+			mui.init()
+		</script>
+		<div class="mui-content">
+			<center style="margin-top: 20%;">
+				<div>
+					<img src="pictures/pig.png" width="50px" height="50px" />
+					<h1 >PIG FARM</h1>
+				</div>
+			</center>		
+			<form id='login-form' class="mui-input-group" style="margin-top: 20%;">
+				<div class="mui-input-row" >
+					<label>账号</label>
+					<input id='account' type="text" class="mui-input-clear mui-input" placeholder="请输入账号">
+				</div>
+				<div class="mui-input-row">
+					<label>密码</label>
+					<input id='password' type="password" class="mui-input-clear mui-input" placeholder="请输入密码">
+				</div>
+			</form>
+
+			<center style="margin-top: 10%;">
+				<img id="right_go" src="pictures/right.png" width="60px" height="60px" />						
+			</center>
+			<center style="margin-top: 200px;" >
+			<a id='reg' href="reg.html">注册账号</a>
+			</center>
+		</div>		
+		<!--右箭头登录-->	
+		<script>
+			var right_go = document.getElementById("right_go");
+			right_go.addEventListener("tap",function(){
+			var username = document.getElementById("account").value;
+			var passwd = document.getElementById("password").value;
+			if(username==""||passwd=="")
+				return;
+			mui.ajax({
+		    	type:"POST",
+		    	url:"http://192.168.1.115:8000/login/",
+		        data: {'account':username,'password':passwd},
+		        success: function(data) {
+		        	if(data=="NOT EXISTS")
+		        		 mui.toast('用户不存在！');
+		        	else if(data=="ERROR")
+		        		 mui.toast('用户名或密码错误!');
+		        	else{
+		        	mui.openWindow({
+		        		url:'main.html',
+		        	});}
+		        },
+		        error: function(xhr, type, errorThrown) {
+		            mui.toast('网络错误');
+		        }
+		    });
+			});
+		</script>
+	</body>
+
+</html>

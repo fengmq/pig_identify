@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link href="css/mui.min.css" rel="stylesheet" />
+	</head>
+	<body>
+		<style>
+			.weather{
+				margin: 20px; 
+				background-color: #DDDDDD;
+				height: 150px;
+			    border-radius:40px ;
+				box-shadow: #ACACB4 5px 5px 5px 0px;
+			}
+			.title_weather{
+				padding-left: 20px;
+				padding-top: 20px;
+			}
+			
+			#weather1{
+				padding-left: 20px;
+				padding-right: 20px;
+			}
+			.predict{
+				border-radius:60px ;
+				 background:#2AC845;
+				 width: 100%;  
+			}
+			.predict-btn{
+				margin-left: 20px; 
+				margin-right: 20px; 
+				margin-top: 100px;
+			}
+		</style>
+		<script src="js/mui.min.js"></script>
+		<script type="text/javascript">
+				var currentCity;
+				var date1;
+				var weather;
+				var wind;
+				var temperature;
+				var city;
+			mui.init()
+			mui.plusReady(function(){
+				 plus.geolocation.getCurrentPosition(translatePoint, function(e) {
+                    mui.toast("异常:" + e.message);
+                });
+			var slider= mui('.mui-slider');
+			slider.slider({interval:2000});			
+			});			
+			function translatePoint(position) {
+                var currentLon = position.coords.longitude;
+                var currentLat = position.coords.latitude;
+                 city = position.address.city;
+                 get_weather(city);　　
+            }
+		</script>
+		<header class="mui-bar mui-bar-nav">
+	   		 <a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+	  	   	<h1 class="mui-title">PIG FARM</h1>
+		</header>
+		<div class="mui-content">
+			<div class="mui-slider">
+				<div class="mui-slider-group mui-slider-loop ">
+					<div class="mui-slider-item mui-slider-item-duplicate">
+						<a href="#"><img src="pictures/4.jpg"/></a>
+					</div>		
+					<div class="mui-slider-item">
+						<a href="#"><img src="pictures/1.jpg"/></a>
+					</div>				
+					<div class="mui-slider-item">
+						<a href="#"><img src="pictures/2.jpg"/></a>
+					</div>
+					<div class="mui-slider-item">
+						<a href="#"><img src="pictures/3.jpeg"/></a>
+					</div>
+					<div class="mui-slider-item">
+						<a href="#"><img src="pictures/4.jpg"/></a>
+					</div>
+					<div class="mui-slider-item mui-slider-item-duplicate">
+						<a href="#"><img src="pictures/1.jpg"/></a>
+					</div>		
+				</div>
+				<div class="mui-slider-indicator">
+					<div class="mui-indicator mui-active"></div>
+					<div class="mui-indicator"></div>
+					<div class="mui-indicator"></div>
+					<div class="mui-indicator"></div>
+				</div>
+			</div>	
+			<div  class="weather">
+				<div class="title_weather"><a>今日天气</a></div>				
+				 <div id="weather1"></div>
+			</div>
+			<div class="predict-btn">
+				<button id="pre" class="predict">预测</button>
+			</div>
+		</div>	
+		
+		<!--天气-->
+		<script>
+			
+			function get_weather(city1){
+				//console.log("2"+city);　
+				var jsonUrl = 'http://api.map.baidu.com/telematics/v3/weather?location='+city1+'&output=json&ak=EGgzZ22dsboWQEcPQ6KDQLknQd3YkkkP';
+				mui.ajax(jsonUrl,{
+					dataType: 'json',
+					type:'get',
+					success:function(data){
+						if(data.status == 'success'){
+								callback(data);						
+						}
+					},
+					 error: function(xhr, type, errorThrown) {
+		            mui.toast('网络错误');
+		        }
+				});
+			}
+			function callback(data){
+				var results=data.results[0];
+				 currentCity = results.currentCity;
+				var weather_data=results.weather_data[0];
+				 date1 = weather_data.date;
+				 weather = weather_data.weather;
+				 wind = weather_data.wind;
+				 temperature = weather_data.temperature;
+				 var a_weather = document.getElementById("weather1");
+				a_weather.innerText=(currentCity+'\t\t'+date1+'\n'+weather+'\n'+wind+'\n'+temperature);
+			}
+			
+			var pre1=document.getElementById("pre");
+			pre1.addEventListener("tap",function(){
+					mui.openWindow({
+		        		url:'index.html',
+		        	});
+			});
+		</script>
+	</body>	
+</html>

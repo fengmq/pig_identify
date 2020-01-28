@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+    <title></title>
+    <script src="js/mui.min.js"></script>
+    <link href="css/mui.min.css" rel="stylesheet"/>
+    <script type="text/javascript" charset="utf-8">
+      	mui.init();
+    </script>
+</head>
+<body>
+	<header class="mui-bar mui-bar-nav">
+	    <a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+	    <h1 class="mui-title">PIG PREDICT</h1>
+	</header>
+	
+	
+	
+	<!--mui-content-->
+	<div class="mui-content">
+		<div style="height: 100px;"> </div>
+		<center><img src="pictures/pic.png" id="pict"  width="200px" height="300px"  onclick="show()"></center>
+		<div style="height: 20px;"> </div>
+		<center>
+			<button type="button" onclick="uploadimg()" id="predict" class="mui-btn" style="border-radius:60px ; background:#2AC845;width: 100px;">预测</button>
+		</center>
+		<div style="height: 20px;"> </div>
+		<div id="demo1" style="height: 5px;display: none;" class="mui-progressbar mui-progressbar-infinite">
+			<span></span>
+		</div>
+		<div style="height: 20px;"> </div>
+		<center>
+			<h3  id="result"  style="color: rgb(255,0,0); "></h3>
+		</center>
+		
+		
+		<center id="describe" style="display: none;">
+			<div><h4 style="display: inline-block;">体&emsp;&emsp;重:</h4> <h4 id="weight1" style="display: inline-block;"></h4></div><br/>
+			<div><h4 style="display: inline-block;">性&emsp;&emsp;别:</h4> <h4 id="sex1"    style="display: inline-block;"></h4></div><br/>
+			<div><h4 style="display: inline-block;">健康状况:</h4>         <h4 id="heath1"  style="display: inline-block;"></h4></div><br/>	
+			<div><h4 style="display: inline-block;">出生日期:</h4>         <h4 id="birth1"    style="display: inline-block;"></h4></div><br/>
+		</center>
+	</div>
+	
+	
+	<!--相册打开-->
+		<div id="sheet1" class="mui-popover mui-popover-action mui-popover-bottom">
+			<ul class="mui-table-view">
+				<li class="mui-table-view-cell" >
+					<a href="#" id="gallary">相册</a>
+				</li>
+				<li class="mui-table-view-cell">
+					<a  href="#" id="camera">摄像头</a>
+				</li>
+			</ul>
+			<ul class="mui-table-view">
+				<li class="mui-table-view-cell">
+					<a href="#sheet1"><b>取消</b></a>
+				</li>
+			</ul>
+		</div>	
+				
+	<!--gallary-->	
+	<script>
+		var imgArray=[];
+		var picdom=document.getElementById("pict");
+		var gallaryBtn=document.getElementById("gallary");
+		gallaryBtn.addEventListener("tap",function(){
+			plus.gallery.pick(
+				function(path){	
+					pict.src=path;
+					var image = new Image();
+					image.src= path;
+					image.onload = function(){
+					var base64 = getBase64Image(image);
+					console.log(base64);
+					var newImgbase = base64.split(",")[1];
+					var num= imgArray.push(newImgbase);
+					}
+				},
+				{
+                    filter:"image",
+                   // multiple:true
+				}
+			)
+		});
+		
+			//base64编码
+		function getBase64Image(img) {
+			    var canvas = document.createElement("canvas");   //创建canvas DOM元素，并设置其宽高和图片一样
+			    canvas.width = img.width;
+			    canvas.height = img.height;
+			    var ctx = canvas.getContext("2d");
+			    ctx.drawImage(img, 0, 0, img.width, img.height); //使用画布画图
+			    var ext = img.src.substring(img.src.lastIndexOf(".") + 1).toLowerCase();  //动态截取图片的格式
+			    var dataURL = canvas.toDataURL("image/" + ext);  //返回的是一串Base64编码的URL并指定格式
+			    return dataURL;
+			}
+	</script>
+	
+	<!--camera-->
+	<script>
+		var picdom=document.getElementById("pict");
+		var cmdom=document.getElementById("camera");
+		cmdom.addEventListener("tap",function(){
+			var cm=plus.camera.getCamera(1);
+			cm.captureImage(function(path){
+				var url1="file://"+plus.io.convertLocalFileSystemURL(path);
+				picdom.src=url1;
+					var image = new Image();
+					image.src= url1;
+					image.onload = function(){
+					var base64 = getBase64Image(image);
+					console.log(base64);
+					var newImgbase = base64.split(",")[1];
+					var num= imgArray.push(newImgbase);}
+			});
+		});
+	</script>
+			
+	<!--actionsheet-->
+	<script>
+			function show(){
+				mui("#sheet1").popover('toggle');
+			}
+	</script>
+	
+	<!--upload-->
+	<script>		
+		function uploadimg() {  	
+		    //这里就可以把添加过图片的imgArray通过JSON解析成字符串，然后上传给服务器
+		    
+		    //如果第一次上传照片，在此函数最后有pop。导致imgArray为空，进行判断，
+		    if(imgArray.length==0)
+		    	{mui.toast("请重新选择照片!");
+		    	return;}
+		    
+		    
+		    //进度条
+		    var progress_bar = document.getElementById("demo1");
+		    progress_bar.style.display="block";
+		    
+		    //结果
+		    var predict_result=document.getElementById("result");
+			var str="";
+			predict_result.innerText=str;
+			// 覆盖之前的预测结果
+			var describe_ = document.getElementById("describe")
+			describe_.style.display="none";
+		    
+		    var imgJson = JSON.stringify(imgArray);
+		    mui.ajax({
+		    	type:"POST",
+		    	url:"http://192.168.1.115:8000/upload/",
+		        data: {'pic': imgJson},
+		        success: function(data) {
+		        	var desc=data.split(",");
+		        	var num=desc[0];
+		        	var birth=desc[1];
+		        	var weight=desc[2];
+		        	var isHeath=desc[3];
+		        	var sex=desc[4];	
+					updata_result(num,birth,weight,isHeath,sex);
+		        },
+		        error: function(xhr, type, errorThrown) {
+		            mui.toast('错误');
+		        }
+		    });
+		    imgArray.pop();		  
+			}
+		
+		function updata_result(num,birth,weight,isHeath,sex){
+			
+			
+			
+		    var progress_bar = document.getElementById("demo1");
+			progress_bar.style.display="none";
+			var predict_result=document.getElementById("result");
+			var str="预测结果"+num+"号猪";
+			predict_result.innerText=str;
+			
+			
+			//描述	
+			var describe_ = document.getElementById("describe")
+			describe_.style.display="block";
+			var weight_2=document.getElementById("weight1");
+			var heath_2=document.getElementById("heath1");
+			var sex_2 = document.getElementById("sex1");
+			var birth_2 = document.getElementById("birth1");
+			weight_2.innerText=weight;
+			birth_2.innerText=birth;
+			if(isHeath=="True")
+					heath_2.innerText="健康";
+			else
+					heath_2.innerText="患病";
+			if(sex=="True")
+					sex_2.innerText="公";	
+			else
+				    sex_2.innerText="母";	
+		}
+	</script>
+</body>
+</html>
