@@ -1,0 +1,113 @@
+后端myapp view
+
+from django.shortcuts import render
+import base64
+import os
+from . import neural_network
+# Create your views here.
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from myApp.models import Pig, User
+
+
+@csrf_exempt
+def uploads(request):
+    if request.method == "POST":
+        b64_data = request.POST.get('pic')
+        data = base64.b64decode(b64_data)
+        print(data)
+        base_path = os.getcwd()
+        base_path = os.path.join(base_path, 'myApp\\pig_pictures\\test.jpg')
+        f = open(base_path, 'wb')
+        f.write(data)
+        f.close()
+        pig_num = neural_network.pig_identify()
+        pig_str = Pig.objects.get(name=pig_num)
+        return HttpResponse(pig_str)
+    else:
+        return HttpResponse("error!")
+
+
+@csrf_exempt
+def login(request):
+    account = request.POST.get("account")
+    password = request.POST.get("password")
+    try:
+        user = User.objects.get(name=account)
+    except User.DoesNotExist:
+        return HttpResponse("NOT EXISTS")
+    if user.password != password:
+        return HttpResponse("ERROR")
+    return HttpResponse("SUCCESS")
+
+
+@csrf_exempt
+def register(request):
+    account = request.POST.get("account")
+    password1 = request.POST.get("password")
+    password2 = request.POST.get("re_password")
+    try:
+        user = User.objects.get(name=account)
+    except User.DoesNotExist:
+        user = User(name=account,password=password1)
+        user.save()
+        return HttpResponse("SUCCESS")
+    return HttpResponse("EXIST")
+
+django   的path
+from django.urls import path
+from . import views
+urlpatterns = [
+    path('upload/', views.uploads),
+    path('login/',views.login),
+    path('register/',views.register),
+]
+
+
+
+
+django的神经网络预测
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import image
+import numpy as np
+import os
+
+
+def foo(var):
+    dict1 = {0: 10, 1: 11, 2: 7, 3: 8, 4: 9}
+    return dict1[var]
+
+
+def pig_identify():
+    project_path = os.getcwd()
+    base_path = os.path.join(project_path, 'myApp\\pig_pictures\\test.jpg')
+    img = image.load_img(base_path, target_size=(300, 450))
+    ph5 = os.path.join(project_path, 'myApp\\pig.h5')
+    x = image.img_to_array(img)
+    x = np.expand_dims(x, axis=0)
+    model = load_model(ph5)
+    y = model.predict(x)
+    max1 = np.argmax(y)
+    return foo(max1)
+
+
+django的模型
+from django.db import models
+
+# Create your models here.
+
+
+class Pig(models.Model):
+    name = models.CharField(max_length=5)
+    birth = models.DateField()
+    weight = models.IntegerField()
+    isHealth = models.BooleanField(default=True)    # true ；false
+    sex = models.BooleanField()      # true 公 ；false 母
+
+    def __str__(self):
+        return self.name+","+str(self.birth)+","+str(self.weight)+","+str(self.isHealth)+","+str(self.sex)
+
+
+class User(models.Model):
+    name = models.CharField(max_length=20)
+    password = models.CharField(max_length=10)

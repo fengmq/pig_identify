@@ -1,0 +1,140 @@
+import os 
+import numpy as np
+import tensorflow as tf
+import tensorflow.keras.backend as K
+from tensorflow.keras.optimizers import RMSprop
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras import regularizers
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.optimizers import SGD
+import matplotlib.pyplot as plt
+
+
+
+base_dir= r"D:\Anaconda\test\pig"
+train =  os.path.join(base_dir, 'train')
+validate =  os.path.join(base_dir, 'validate')
+
+train_7 = os.path.join(train, 'image_process7')
+train_8 = os.path.join(train, 'image_process8')
+train_9 = os.path.join(train, 'image_process9')
+train_10 = os.path.join(train, 'image_process10')
+train_11 = os.path.join(train, 'image_process11')
+
+validate_7 = os.path.join(validate, 'image_process7')
+validate_8 = os.path.join(validate, 'image_process8')
+validate_9 = os.path.join(validate, 'image_process9')
+validate_10 = os.path.join(validate, 'image_process10')
+validate_11 = os.path.join(validate, 'image_process11')
+
+
+
+train_7_dir = os.listdir(train_7)
+train_8_dir = os.listdir(train_8)
+train_9_dir = os.listdir(train_9)
+train_10_dir = os.listdir(train_10)
+train_11_dir = os.listdir(train_11)
+print('total training train_7_pic image:  ',len(os.listdir(train_7)),"张")
+print('total training train_8_pic image:  ',len(os.listdir(train_8)) ,"张")
+print('total training train_9_pic image:  ',len(os.listdir(train_9)),"张")
+print('total training train_10_pic image:  ',len(os.listdir(train_10)),"张")
+print('total training train_11_pic image:  ',len(os.listdir(train_11)),"张")
+
+
+validate_7_dir = os.listdir(validate_7)
+validate_8_dir = os.listdir(validate_8)
+validate_9_dir = os.listdir(validate_9)
+validate_10_dir = os.listdir(validate_10)
+validate_11_dir = os.listdir(validate_11)
+print('total validate train_7_pic image:  ',len(os.listdir(validate_7)),"张")
+print('total validate train_8_pic image:  ',len(os.listdir(validate_8)) ,"张")
+print('total validate train_9_pic image:  ',len(os.listdir(validate_9)),"张")
+print('total validate train_10_pic image:  ',len(os.listdir(validate_10)),"张")
+print('total validate train_11_pic image:  ',len(os.listdir(validate_11)),"张")
+
+
+class MyCallBack(tf.keras.callbacks.Callback):  # 回调函数，在下面的fit函数进行调用
+    def on_epoch_end(self, epoch, logs={}):
+        loss = logs.get('loss')
+        print("loss is",loss)
+        if loss <= 0.1:
+            lr = K.get_value(model.optimizer.lr)
+            K.set_value(model.optimizer.lr, lr * 0.5)
+            print("lr changed to {}".format(lr))
+            return K.get_value(model.optimizer.lr) 
+callbacks = MyCallBack()
+
+
+
+
+#对于CNN,使用BatchNOrmalization(),进正则化，
+#对于连接层，采用Dropout进行部分神经元失活
+model = tf.keras.Sequential([
+    #  keras生成16个过滤器，过滤器是（3,3）的，激活函数是relu，
+    #26也就是图片大小
+    # 过滤器会自己筛选拟合
+    tf.keras.layers.Conv2D(16, (3, 3), activation='relu', input_shape=(300,450,3)),
+       #  最大池化，
+    tf.keras.layers.MaxPooling2D(2, 2),
+    
+    tf.keras.layers.Conv2D(32, (3, 3), activation='relu'),
+    tf.keras.layers.MaxPooling2D(2, 2),
+    
+    tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
+    tf.keras.layers.MaxPooling2D(2, 2),  
+    tf.keras.layers.Dropout(0.4),
+    tf.keras.layers.Flatten(),    
+    tf.keras.layers.Dense(512, activation='relu',use_bias=True,bias_initializer='zero'),
+    tf.keras.layers.Dropout(0.5),
+    tf.keras.layers.Dense(5, activation='softmax',use_bias=True,bias_initializer='zero')  # 5分类
+   
+])
+
+model.summary()
+
+
+model.compile( loss='binary_crossentropy', optimizer=RMSprop(lr=1e-4),metrics=['acc'])
+train_datagen = ImageDataGenerator(rescale=1/255)
+test_datagen = ImageDataGenerator(rescale=1/255)
+train_generator = train_datagen.flow_from_directory(
+    train, # 训练样本地址
+    target_size = (300,450),
+    batch_size=30,
+    class_mode='categorical')
+validation_generator = test_datagen.flow_from_directory(
+    validate, # 测试样本地址
+    target_size = (300,450),
+    batch_size=30,
+    class_mode='categorical')
+
+history= model.fit_generator(
+    train_generator,
+    steps_per_epoch=50,
+    epochs=10,
+    validation_data=validation_generator,
+    validation_steps=50,
+    callbacks=[callbacks],
+    verbose=2)
+
+
+
+
+
+history=history
+plt.plot()
+plt.plot(history.history['acc'])
+plt.plot(history.history['val_acc'])
+plt.title('classification accuracy')
+plt.ylabel('accuracy')
+plt.xlabel('epoch')
+plt.legend(['train', 'validation'], loc='upper right')
+plt.show()# summarize history for loss
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('classification loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'validation'], loc='upper right')
+plt.show()
+
+model.save("pig.h5")
